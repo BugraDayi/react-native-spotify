@@ -111,6 +111,7 @@ RCT_EXPORT_METHOD(__registerAsJSEventEmitter:(int)moduleId) {
 }
 
 -(void)sendEvent:(NSString*)event args:(NSArray*)args {
+	printOutLog(@"emitting event %@", event);
 	[RNEventEmitter emitEvent:event withParams:args module:self bridge:_bridge];
 }
 
@@ -430,6 +431,7 @@ RCT_EXPORT_METHOD(isInitializedAsync:(RCTPromiseResolveBlock)resolve reject:(RCT
 		printOutLog(@"session renewed?: %@", renewed);
 		if(renewed.boolValue) {
 			if(_player == nil || !_player.loggedIn) {
+				printOutLog(@"re-initializing player");
 				[self initializePlayerIfNeeded:[RNSpotifyCompletion onResolve:^(id unused) {
 					[completion resolve:renewed];
 				} onReject:^(RNSpotifyError* error) {
@@ -442,6 +444,7 @@ RCT_EXPORT_METHOD(isInitializedAsync:(RCTPromiseResolveBlock)resolve reject:(RCT
 				if(_auth.session != nil) {
 					accessToken = _auth.session.accessToken;
 				}
+				printOutLog(@"logging in player with new access token");
 				[_player loginWithAccessToken:accessToken];
 			}
 		}
@@ -666,6 +669,7 @@ RCT_EXPORT_METHOD(logout:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejec
 -(void)scheduleAuthRenewalTimer {
 	if(_auth.tokenRefreshURL == nil || _auth.session == nil || _auth.session.encryptedRefreshToken == nil) {
 		// we can't perform token refresh, so don't bother scheduling the timer
+		printOutLog(@"we can't do session renewal, so not scheduling timer...");
 		return;
 	}
 	NSTimeInterval now = [NSDate date].timeIntervalSince1970;
@@ -680,6 +684,7 @@ RCT_EXPORT_METHOD(logout:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejec
 		if(_authRenewalTimer != nil) {
 			[_authRenewalTimer invalidate];
 		}
+		printOutLog(@"scheduling auth renewal timer");
 		NSTimer* timer = [NSTimer timerWithTimeInterval:renewalTimeDiff target:self selector:@selector(authRenewalTimerDidFire) userInfo:nil repeats:NO];
 		[[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
 		_authRenewalTimer = timer;
@@ -687,6 +692,7 @@ RCT_EXPORT_METHOD(logout:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejec
 }
 
 -(void)authRenewalTimerDidFire {
+	printOutLog(@"auth renewal timer fired");
 	[self renewSession:[RNSpotifyCompletion onComplete:^(id result, RNSpotifyError* error) {
 		// ensure we're logged in
 		if(_loggedIn) {
@@ -1077,6 +1083,7 @@ RCT_EXPORT_METHOD(sendRequest:(NSString*)endpoint method:(NSString*)method param
 }
 
 -(void)audioStreaming:(SPTAudioStreamingController*)audioStreaming didReceiveError:(NSError*)error {
+	printErrLog(@"received player error: %@", error);
 	if(_loggingInPlayer) {
 		_loggingInPlayer = NO;
 		// if the error is one that requires logging out, log out
@@ -1102,6 +1109,8 @@ RCT_EXPORT_METHOD(sendRequest:(NSString*)endpoint method:(NSString*)method param
 }
 
 -(void)audioStreamingDidLogout:(SPTAudioStreamingController*)audioStreaming {
+	printOutLog(@"player logged out");
+	
 	_loggingInPlayer = NO;
 	
 	BOOL wasLoggingOutPlayer = _loggingOutPlayer;
@@ -1161,6 +1170,7 @@ RCT_EXPORT_METHOD(sendRequest:(NSString*)endpoint method:(NSString*)method param
 }
 
 -(void)audioStreaming:(SPTAudioStreamingController*)audioStreaming didReceiveMessage:(NSString*)message {
+	printOutLog(@"received player message: %@", message);
 	[self sendEvent:@"playerMessage" args:@[message]];
 }
 

@@ -12,26 +12,8 @@ const login = Spotify.login;
 
 
 Spotify.login = (options={}) => {
+	options = {...options};
 	return login(options);
-}
-
-
-Spotify.getMe = () => {
-	return sendRequest('v1/me', 'GET', null, false);
-}
-
-
-
-Spotify.getMyPlaylists = (options) => {
-	const body = {...options};
-	return sendRequest('v1/me/playlists', 'GET', body, false);
-}
-
-
-
-Spotify.getMyTracks = (options) => {
-	const body = {...options};
-	return sendRequest('v1/me/tracks', 'GET', body, false);
 }
 
 
@@ -57,13 +39,6 @@ Spotify.search = (query, types, options) => {
 		}
 	}
 	return results;
-}
-
-
-
-Spotify.getPlaylistTracks = (userId, playlistId, options) => {
-	const body = {...options};
-	return sendRequest(`v1/users/${userId}/playlists/${playlistId}/tracks`, 'GET', body, false);
 }
 
 
@@ -197,6 +172,40 @@ Spotify.getTracksAudioFeatures = (trackIDs, options) => {
 	const body = {...options};
 	body['ids'] = trackIDs.join(',');
 	return sendRequest('v1/audio-features', 'GET', body, false);
+}
+
+
+
+Spotify.getPlaylist = (playlistID, options) => {
+	if(playlistID == null) {
+		return Promise.reject(new Error("playlistID cannot be null"));
+	}
+	const body = {...options};
+	return sendRequest('v1/playlists/'+playlistID, 'GET', body, false);
+}
+
+Spotify.getPlaylistTracks = (playlistID, options) => {
+	if(playlistID == null) {
+		return Promise.reject(new Error("playlistID cannot be null"));
+	}
+	const body = {...options};
+	return sendRequest('v1/playlists/'+playlistID+'/tracks', 'GET', body, false);
+}
+
+
+
+Spotify.getMe = () => {
+	return sendRequest('v1/me', 'GET', null, false);
+}
+
+Spotify.getMyTracks = (options) => {
+	const body = {...options};
+	return sendRequest('v1/me/tracks', 'GET', body, false);
+}
+
+Spotify.getMyPlaylists = (options) => {
+	const body = {...options};
+	return sendRequest('v1/me/playlists', 'GET', body, false);
 }
 
 
