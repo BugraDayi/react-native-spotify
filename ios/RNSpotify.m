@@ -186,8 +186,8 @@ RCT_EXPORT_METHOD(initialize:(NSDictionary*)options resolve:(RCTPromiseResolveBl
 	[commandCenter.togglePlayPauseCommand setEnabled:YES];
 	[commandCenter.playCommand setEnabled:YES];
 	[commandCenter.pauseCommand setEnabled:YES];
-	[commandCenter.nextTrackCommand setEnabled:NO];
-	[commandCenter.previousTrackCommand setEnabled:NO];
+	[commandCenter.nextTrackCommand setEnabled:YES];
+	[commandCenter.previousTrackCommand setEnabled:YES];
 	
 	
 	[commandCenter.playCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
@@ -198,6 +198,14 @@ RCT_EXPORT_METHOD(initialize:(NSDictionary*)options resolve:(RCTPromiseResolveBl
 	[commandCenter.pauseCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
 		[_player setIsPlaying:false callback:^(NSError* error) {
 		}];
+		return MPRemoteCommandHandlerStatusSuccess;
+	}];
+	[commandCenter.nextTrackCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+		[self sendEvent:@"notifyNext" args:@[]];
+		return MPRemoteCommandHandlerStatusSuccess;
+	}];
+	[commandCenter.previousTrackCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+		[self sendEvent:@"notifyPrev" args:@[]];
 		return MPRemoteCommandHandlerStatusSuccess;
 	}];
 	
@@ -781,13 +789,14 @@ RCT_EXPORT_METHOD(playURI:(NSString*)uri startIndex:(NSUInteger)startIndex start
 	}]];
 }
 
-RCT_EXPORT_METHOD(setMediaPlayerInfo:(NSString*)name artist:(NSString*)artist resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(setMediaPlayerInfo:(NSString*)name artist:(NSString*)artist duration:(NSNumber*)duration resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject) {
 	[self prepareForPlayer:[RNSpotifyCompletion onReject:^(RNSpotifyError* error) {
 		[error reject:reject];
 	} onResolve:^(id unused) {
 		[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = [NSMutableDictionary dictionaryWithObjectsAndKeys:
 																 name, MPMediaItemPropertyTitle,
 																 artist, MPMediaItemPropertyArtist,
+																 duration, MPMediaItemPropertyPlaybackDuration,
 																 [NSNumber numberWithDouble:0.0], MPNowPlayingInfoPropertyPlaybackRate, nil];
 	}]];
 }
